@@ -1,0 +1,40 @@
+name: Build and Test Docker App
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-run:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # 1️⃣ Download your repo code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+
+    # 2️⃣ Build Docker image
+    - name: Build Docker image
+      run: docker build -t text2sql .
+
+
+    # 3️⃣ Run container using GitHub secrets
+    - name: Run container test
+      run: |
+        docker run -d -p 8501:8501 \
+          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+          -e NEON_DB=${{ secrets.NEON_DB }} \
+          text2sql
+
+
+    # 4️⃣ Wait for app to start
+    - name: Wait for startup
+      run: sleep 20
+
+
+    # 5️⃣ Check if Streamlit is reachable
+    - name: Test app health
+      run: curl http://localhost:8501 || exit 1
