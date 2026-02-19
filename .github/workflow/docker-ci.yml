@@ -26,7 +26,7 @@ jobs:
       run: |
         docker run -d -p 8501:8501 \
           -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-          -e NEON_DB=${{ secrets.NEON_DB }} \
+          -e NEON_DB_URL=${{ secrets.NEON_DB_URL }} \
           text2sql
 
 

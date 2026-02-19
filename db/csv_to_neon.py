@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-NEON_DB_URL = os.getenv("NEON_DB")  # recommended
+NEON_DB_URL = os.getenv("NEON_DB_URL")  # recommended
 
 if not NEON_DB_URL:
     raise ValueError("Please set NEON_DB_URL environment variable")
