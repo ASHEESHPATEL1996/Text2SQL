@@ -1,86 +1,61 @@
-import os
-from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
+from db.db_connection import fetch_df
 
-load_dotenv()
 
-NEON_DB_URL = os.getenv("NEON_DB")
+def quote_identifier(identifier: str) -> str:
+    """Safely quote PostgreSQL identifiers such as table names."""
+    return '"' + identifier.replace('"', '""') + '"'
 
-if not NEON_DB_URL:
-    raise ValueError("NEON_DB_URL not found")
 
-engine = create_engine(NEON_DB_URL)
-
-def fetch_schema():
-
-    query = text("""
-    SELECT
-        table_name,
-        column_name,
-        data_type
-    FROM information_schema.columns
+def get_schema_text() -> str:
+    """
+    Returns a human-readable schema description
+    for use in LLM prompts.
+    """
+    tables_query = """
+    SELECT table_name
+    FROM information_schema.tables
     WHERE table_schema = 'public'
-    ORDER BY table_name, ordinal_position
-    """)
+    ORDER BY table_name;
+    """
 
-    with engine.connect() as conn:
-        rows = conn.execute(query).fetchall()
+    tables_df = fetch_df(tables_query)
 
-    schema = {}
+    if tables_df.empty:
+        return "No tables found in database."
 
-    for table, col, dtype in rows:
-        schema.setdefault(table, []).append((col, dtype))
+    schema_lines = []
 
-    return schema
+    for table in tables_df["table_name"]:
+        cols_query = """
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = :table
+        ORDER BY ordinal_position;
+        """
+        cols_df = fetch_df(cols_query, {"table": table})
 
+        columns = [
+            f"{row['column_name']} ({row['data_type']})"
+            for _, row in cols_df.iterrows()
+        ]
 
-def get_row_counts(schema):
+        quoted_table = quote_identifier(table)
+        count_query = f"SELECT COUNT(*) AS cnt FROM {quoted_table};"
+        count_df = fetch_df(count_query)
 
-    counts = {}
+        row_count = int(count_df.iloc[0]["cnt"])
 
-    with engine.connect() as conn:
-        for table in schema.keys():
+        schema_lines.append(
+            f"Table: {table} - {row_count} rows\n"
+            f"Columns: {', '.join(columns)}"
+        )
 
-            try:
-                count = conn.execute(
-                    text(f"SELECT COUNT(*) FROM {table}")
-                ).scalar()
-
-            except Exception:
-                count = "unknown"
-
-            counts[table] = count
-
-    return counts
-
-
-def format_schema(schema, counts):
-
-    lines = []
-
-    for table, columns in schema.items():
-
-        row_info = counts.get(table, "unknown")
-
-        lines.append(f"Table: {table} (rows: {row_info})")
-
-        for col, dtype in columns:
-            lines.append(f"  - {col} ({dtype})")
-
-        lines.append("")
-
-    return "\n".join(lines)
-
-
-def get_schema_text():
-
-    schema = fetch_schema()
-    counts = get_row_counts(schema)
-
-    formatted = format_schema(schema, counts)
-
-    return formatted
+    return "\n\n".join(schema_lines)
 
 
 if __name__ == "__main__":
-    print(get_schema_text())
+    schema = get_schema_text()
+
+    print("\nDatabase Schema:\n")
+    print(schema)

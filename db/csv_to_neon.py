@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
@@ -19,13 +20,16 @@ engine = create_engine(NEON_DB_URL)
 
 def clean_name(name: str) -> str:
     """Make safe SQL table/column names"""
-    return (
-        name.lower()
-        .strip()
-        .replace(" ", "_")
-        .replace("-", "_")
-        .replace(".", "_")
-    )
+    cleaned = re.sub(r"[^a-z0-9_]+", "_", name.lower().strip())
+    cleaned = re.sub(r"_+", "_", cleaned).strip("_")
+
+    if not cleaned:
+        return "unnamed"
+
+    if cleaned[0].isdigit():
+        return f"t_{cleaned}"
+
+    return cleaned
 
 
 def upload_all_csv():

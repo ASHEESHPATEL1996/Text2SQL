@@ -1,4 +1,7 @@
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
@@ -14,11 +17,30 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY not found")
 
+print("OpenAI API Key loaded successfully")
+
 llm = ChatOpenAI(
-    model="gpt-4.1-mini",
-    temperature=0
+    model="gpt-4.1-mini",   # cheap + reliable
+    temperature=0           # deterministic output
 )
 
+
+_SCHEMA = None
+
+
+def get_schema_cached():
+    """Fetch schema once and cache in memory."""
+    global _SCHEMA
+    if _SCHEMA is None:
+        _SCHEMA = get_schema_text()
+    return _SCHEMA
+
+
+def refresh_schema():
+    """Manually refresh schema (if DB structure changes)."""
+    global _SCHEMA
+    _SCHEMA = get_schema_text()
+print("Database schema loaded and cached in memory")
 
 prompt = ChatPromptTemplate.from_template(
     """
@@ -33,11 +55,11 @@ STRICT RULES:
 - Only SELECT queries
 - Prefer a single table
 - Avoid JOINs unless absolutely necessary
-- subqueries when absolutely needed
-- No window functions unless absolutely needed
-- CTEs when absolutely needed
+- Use subqueries only when needed
+- No window functions unless required
+- Use CTEs only if necessary
 - No aggregation unless required
-- Use only columns that exist
+- Use only existing tables and columns
 - Keep query short and readable
 - Return ONLY raw SQL
 - No markdown
@@ -51,11 +73,12 @@ QUESTION:
 
 chain = prompt | llm
 
-def clean_sql(output: str) -> str:
 
+
+def clean_sql(output: str) -> str:
     sql = output.strip()
 
-    # Remove markdown blocks if present
+    # Remove markdown blocks
     if "```" in sql:
         parts = sql.split("```")
         for p in parts:
@@ -63,7 +86,7 @@ def clean_sql(output: str) -> str:
                 sql = p.strip()
                 break
 
-    # Remove leading labels
+    # Remove common prefixes
     prefixes = ["sql", "SQL", "Query:", "SQL Query:"]
     for p in prefixes:
         if sql.lower().startswith(p.lower()):
@@ -73,25 +96,28 @@ def clean_sql(output: str) -> str:
 
 
 
-
 FORBIDDEN = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE"]
+
 
 def validate_sql(sql: str) -> bool:
 
     upper = sql.upper().strip()
 
+    # Must be SELECT
     if not upper.startswith("SELECT"):
         return False
 
+    # Block destructive operations
     if any(word in upper for word in FORBIDDEN):
         return False
 
     return True
 
 
+
 def generate_sql(question: str):
 
-    schema = get_schema_text()
+    schema = get_schema_cached()
 
     response = chain.invoke({
         "schema": schema,
@@ -107,10 +133,10 @@ def generate_sql(question: str):
     return sql
 
 
-
 if __name__ == "__main__":
 
-    q = "Show all customers who made a purchase of product 8 also are from albama and sort them by sales value"
+    q = "Show all customers who are from alabama"
+    print("Question:\n", q)
 
     sql = generate_sql(q)
 
