@@ -134,14 +134,14 @@ def generate_sql(question: str):
 
     schema = get_schema_cached()
 
-    # Start trace for this request
-    trace = langfuse.trace(
+    # Start root span for this request (Langfuse v3 API)
+    trace = langfuse.start_span(
         name="text-to-sql",
         input={"question": question}
     )
 
-    # eneration span (tracks tokens & latency)
-    generation = trace.generation(
+    # Generation span (tracks tokens & latency)
+    generation = trace.start_generation(
         name="sql-generation",
         model="gpt-4.1-mini",
         input={
@@ -175,9 +175,15 @@ def generate_sql(question: str):
             }
 
         # Log to Langfuse
-        generation.end(
+        generation.update(
             output={"sql": sql},
             metadata=usage
+        )
+        generation.end()
+
+        trace.update(
+            output={"sql": sql},
+            metadata={"success": True}
         )
 
         return sql, usage
@@ -185,11 +191,22 @@ def generate_sql(question: str):
     except Exception as e:
 
         # Log error to Langfuse
-        generation.end(output={"error": str(e)})
+        generation.update(
+            output={"error": str(e)},
+            level="ERROR",
+            status_message=str(e)
+        )
+        generation.end()
+        trace.update(
+            output={"error": str(e)},
+            level="ERROR",
+            status_message=str(e)
+        )
 
         raise
 
     finally:
+        trace.end()
         # Ensure logs are sent immediately
         langfuse.flush()
 

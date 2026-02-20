@@ -17,8 +17,8 @@ import time
 
 def answer_question(question: str):
 
-    # Start end-to-end trace
-    trace = langfuse.trace(
+    # Start end-to-end root span (Langfuse v3 API)
+    trace = langfuse.start_span(
         name="text-to-sql-request",
         input={"question": question}
     )
@@ -39,6 +39,7 @@ def answer_question(question: str):
             output={"sql": sql}
         )
 
+        trace.end()
         langfuse.flush()
         return sql, df, "L1-cache", None
 
@@ -60,6 +61,7 @@ def answer_question(question: str):
             output={"sql": sql}
         )
 
+        trace.end()
         langfuse.flush()
         return sql, df, "L2-cache", None
 
@@ -78,20 +80,23 @@ def answer_question(question: str):
 
         execution_time = time.time() - start_time
 
-        exec_span.end(
+        exec_span.update(
             output={
                 "rows_returned": len(df),
                 "execution_time_sec": execution_time
             }
         )
+        exec_span.end()
 
     except Exception as e:
 
-        exec_span.end(
+        exec_span.update(
             output={"error": str(e)}
         )
+        exec_span.end()
 
         trace.update(level="ERROR")
+        trace.end()
         langfuse.flush()
 
         raise RuntimeError(f"SQL execution failed: {e}")
@@ -108,6 +113,7 @@ def answer_question(question: str):
         output={"sql": sql}
     )
 
+    trace.end()
     langfuse.flush()
 
     return sql, df, "LLM", usage
