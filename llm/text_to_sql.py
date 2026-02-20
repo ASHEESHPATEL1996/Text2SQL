@@ -3,25 +3,46 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from dotenv import load_dotenv
+import streamlit as st
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
+from langfuse import Langfuse
+
 from db.schema_introspect import get_schema_text
+from langchain_community.callbacks.manager import get_openai_callback
+
 
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+def get_secret(key: str):
+    """Works locally (.env) and on Streamlit Cloud."""
+    if key in st.secrets:
+        return st.secrets[key]
+    return os.getenv(key)
+
+
+OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
 
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY not found")
 
 print("OpenAI API Key loaded successfully")
 
+
+langfuse = Langfuse(
+    public_key=get_secret("LANGFUSE_PUBLIC_KEY"),
+    secret_key=get_secret("LANGFUSE_SECRET_KEY"),
+    host=get_secret("LANGFUSE_HOST")
+)
+
+
 llm = ChatOpenAI(
-    model="gpt-4.1-mini",   # cheap + reliable
-    temperature=0           # deterministic output
+    model="gpt-4.1-mini",
+    temperature=0
 )
 
 
@@ -29,7 +50,6 @@ _SCHEMA = None
 
 
 def get_schema_cached():
-    """Fetch schema once and cache in memory."""
     global _SCHEMA
     if _SCHEMA is None:
         _SCHEMA = get_schema_text()
@@ -37,10 +57,12 @@ def get_schema_cached():
 
 
 def refresh_schema():
-    """Manually refresh schema (if DB structure changes)."""
     global _SCHEMA
     _SCHEMA = get_schema_text()
+
+
 print("Database schema loaded and cached in memory")
+
 
 prompt = ChatPromptTemplate.from_template(
     """
@@ -74,11 +96,9 @@ QUESTION:
 chain = prompt | llm
 
 
-
 def clean_sql(output: str) -> str:
     sql = output.strip()
 
-    # Remove markdown blocks
     if "```" in sql:
         parts = sql.split("```")
         for p in parts:
@@ -86,14 +106,12 @@ def clean_sql(output: str) -> str:
                 sql = p.strip()
                 break
 
-    # Remove common prefixes
     prefixes = ["sql", "SQL", "Query:", "SQL Query:"]
     for p in prefixes:
         if sql.lower().startswith(p.lower()):
             sql = sql[len(p):].strip()
 
     return sql
-
 
 
 FORBIDDEN = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE"]
@@ -103,34 +121,77 @@ def validate_sql(sql: str) -> bool:
 
     upper = sql.upper().strip()
 
-    # Must be SELECT
     if not upper.startswith("SELECT"):
         return False
 
-    # Block destructive operations
     if any(word in upper for word in FORBIDDEN):
         return False
 
     return True
 
 
-
 def generate_sql(question: str):
 
     schema = get_schema_cached()
 
-    response = chain.invoke({
-        "schema": schema,
-        "question": question
-    })
+    # Start trace for this request
+    trace = langfuse.trace(
+        name="text-to-sql",
+        input={"question": question}
+    )
 
-    raw_output = response.content
-    sql = clean_sql(raw_output)
+    # eneration span (tracks tokens & latency)
+    generation = trace.generation(
+        name="sql-generation",
+        model="gpt-4.1-mini",
+        input={
+            "question": question,
+            "schema_preview": schema[:2000]
+        }
+    )
 
-    if not validate_sql(sql):
-        raise ValueError(f"Unsafe SQL generated:\n{raw_output}")
+    try:
 
-    return sql
+        # Capture token usage
+        with get_openai_callback() as cb:
+
+            response = chain.invoke({
+                "schema": schema,
+                "question": question
+            })
+
+            raw_output = response.content
+            sql = clean_sql(raw_output)
+
+            if not validate_sql(sql):
+                raise ValueError(f"Unsafe SQL generated:\n{raw_output}")
+
+            # Token usage metrics
+            usage = {
+                "prompt_tokens": cb.prompt_tokens,
+                "completion_tokens": cb.completion_tokens,
+                "total_tokens": cb.total_tokens,
+                "cost_usd": cb.total_cost
+            }
+
+        # Log to Langfuse
+        generation.end(
+            output={"sql": sql},
+            metadata=usage
+        )
+
+        return sql, usage
+
+    except Exception as e:
+
+        # Log error to Langfuse
+        generation.end(output={"error": str(e)})
+
+        raise
+
+    finally:
+        # Ensure logs are sent immediately
+        langfuse.flush()
 
 
 if __name__ == "__main__":

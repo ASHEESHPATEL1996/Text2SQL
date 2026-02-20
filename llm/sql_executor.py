@@ -11,16 +11,36 @@ from cache.cache_metrics import (
     hit_rate
 )
 
+from observability.langfuse_client import langfuse
+import time
+
 
 def answer_question(question: str):
 
+    # Start end-to-end trace
+    trace = langfuse.trace(
+        name="text-to-sql-request",
+        input={"question": question}
+    )
+
+    start_time = time.time()
 
     l1 = get_l1(question)
 
     if l1:
         record_l1_hit()
         sql, df = l1
-        return sql, df, "L1-cache"
+
+        trace.update(
+            metadata={
+                "cache_source": "L1",
+                "rows_returned": len(df)
+            },
+            output={"sql": sql}
+        )
+
+        langfuse.flush()
+        return sql, df, "L1-cache", None
 
     l2 = get_cached_result(question)
 
@@ -31,22 +51,66 @@ def answer_question(question: str):
         # Promote to L1
         set_l1(question, sql, df)
 
-        return sql, df, "L2-cache"
+        trace.update(
+            metadata={
+                "cache_source": "L2",
+                "promoted_to_L1": True,
+                "rows_returned": len(df)
+            },
+            output={"sql": sql}
+        )
+
+        langfuse.flush()
+        return sql, df, "L2-cache", None
 
 
     record_miss()
 
-    sql = generate_sql(question)
+    trace.update(metadata={"cache_source": "LLM"})
+
+    # SQL generation already tracked in text_to_sql.py
+    sql, usage = generate_sql(question)
+
+    exec_span = trace.span(name="sql-execution")
 
     try:
         df = fetch_df(sql)
+
+        execution_time = time.time() - start_time
+
+        exec_span.end(
+            output={
+                "rows_returned": len(df),
+                "execution_time_sec": execution_time
+            }
+        )
+
     except Exception as e:
+
+        exec_span.end(
+            output={"error": str(e)}
+        )
+
+        trace.update(level="ERROR")
+        langfuse.flush()
+
         raise RuntimeError(f"SQL execution failed: {e}")
 
     save_to_cache(question, sql, df)  # L2 persistent
     set_l1(question, sql, df)         # L1 memory
 
-    return sql, df, "LLM"
+    trace.update(
+        metadata={
+            "rows_returned": len(df),
+            "execution_time_sec": execution_time,
+            "saved_to_cache": True
+        },
+        output={"sql": sql}
+    )
+
+    langfuse.flush()
+
+    return sql, df, "LLM", usage
 
 if __name__ == "__main__":
 
@@ -62,7 +126,6 @@ if __name__ == "__main__":
 
         print("\nSource:", source)
         print("Rows:", len(result))
-
 
     print("\n📊 Cache Metrics:")
     print(get_metrics())
