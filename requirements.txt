@@ -8,3 +8,4 @@ langchain-openai
 openai
 langfuse>=3,<4
 langchain-community
+pydantic>=2.7.4
