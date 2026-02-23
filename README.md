@@ -17,17 +17,29 @@ https://text2sql-asheeshpatel.streamlit.app/
 
   * Tier-1: In-memory cache
   * Tier-2: Persistent DB cache
+<<<<<<< HEAD
 * Real-time token usage & cost estimation
 * Schema-aware SQL generation
 * LLM observability with Langfuse
 * Safe SQL validation (SELECT-only)
 * Interactive Streamlit dashboard
+=======
+*  Real-time token usage & cost estimation
+*  Schema-aware SQL generation
+*  LLM observability with Langfuse
+*  Safe SQL validation (SELECT-only)
+*  Interactive Streamlit dashboard
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 * Query history + CSV download
 * Docker support for local deployment
 
 ---
 
+<<<<<<< HEAD
 ##  Architecture Overview
+=======
+##Architecture Overview
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ```
 User → Streamlit UI → LLM (Text-to-SQL)
@@ -47,7 +59,11 @@ Enhancements:
 
 ---
 
+<<<<<<< HEAD
 ##  Tech Stack
+=======
+## Tech Stack
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 * **Python 3.13.5**
 * Streamlit
@@ -61,9 +77,15 @@ Enhancements:
 
 ---
 
+<<<<<<< HEAD
 ##  Run the App Locally (From GitHub)
 
 ###  Clone the Repository
+=======
+## Run the App Locally (From GitHub)
+
+### Clone the Repository
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ```bash
 git clone https://github.com/<your-username>/Text2SQL.git
@@ -72,7 +94,11 @@ cd Text2SQL
 
 ---
 
+<<<<<<< HEAD
 ###  Create a Virtual Environment
+=======
+### Create a Virtual Environment
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ```bash
 python -m venv .venv
@@ -94,7 +120,11 @@ source .venv/bin/activate
 
 ---
 
+<<<<<<< HEAD
 ###  Install Dependencies
+=======
+### Install Dependencies
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ```bash
 pip install -r requirements.txt
@@ -102,7 +132,11 @@ pip install -r requirements.txt
 
 ---
 
+<<<<<<< HEAD
 ###  Configure Environment Variables
+=======
+### Configure Environment Variables
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 Create a `.env` file in the project root:
 
@@ -116,7 +150,11 @@ LANGFUSE_HOST=https://cloud.langfuse.com
 
 ---
 
+<<<<<<< HEAD
 ###  Run the Streamlit App
+=======
+### Run the Streamlit App
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ```bash
 streamlit run app/app.py
@@ -157,12 +195,19 @@ http://localhost:8501
 ## Access the Hosted Version
 
 You can use the deployed app directly:
+<<<<<<< HEAD
 
+=======
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
  https://text2sql-asheeshpatel.streamlit.app/
 
 ---
 
+<<<<<<< HEAD
 ##  How It Works
+=======
+## How It Works
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 1. User enters a natural language query
 2. System retrieves database schema
@@ -174,7 +219,11 @@ You can use the deployed app directly:
 
 ---
 
+<<<<<<< HEAD
 ##  Caching Strategy
+=======
+## Caching Strategy
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ### Tier-1 Cache (Memory)
 
@@ -190,7 +239,11 @@ You can use the deployed app directly:
 
 ---
 
+<<<<<<< HEAD
 ##  Observability & Monitoring
+=======
+## Observability & Monitoring
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 Langfuse integration provides:
 
@@ -202,7 +255,11 @@ Langfuse integration provides:
 
 ---
 
+<<<<<<< HEAD
 ##  Project Structure
+=======
+## Project Structure
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 ```
 Text2SQL/
@@ -221,7 +278,11 @@ Text2SQL/
 
 ---
 
+<<<<<<< HEAD
 ##  Safety Measures
+=======
+## Safety Measures
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 * Only SELECT queries allowed
 * SQL validation before execution
@@ -238,7 +299,11 @@ Text2SQL/
 
 ---
 
+<<<<<<< HEAD
 ##  What Can Be Done Next
+=======
+## What Can Be Done Next
+>>>>>>> ab1c49aa9c3538501f47753ba8aad0de8d0112d0
 
 * **Semantic cache lookup** — Introduce embedding-based similarity so equivalent questions reuse the same cached SQL. For instance, “How many users signed up last month?” and “What’s the count of new signups in the previous month?” would both resolve to one cached query, avoiding duplicate LLM calls and lowering latency and cost.
 
