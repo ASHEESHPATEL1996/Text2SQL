@@ -17,6 +17,7 @@ https://text2sql-asheeshpatel.streamlit.app/
 
   * Tier-1: In-memory cache
   * Tier-2: Persistent DB cache
+    
 *  Real-time token usage & cost estimation
 *  Schema-aware SQL generation
 *  LLM observability with Langfuse
