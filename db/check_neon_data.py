@@ -13,7 +13,7 @@ if not NEON_DB_URL:
 
 engine = create_engine(NEON_DB_URL)
 
-# 🔹 List tables
+# List tables
 tables = pd.read_sql("""
 SELECT table_name
 FROM information_schema.tables

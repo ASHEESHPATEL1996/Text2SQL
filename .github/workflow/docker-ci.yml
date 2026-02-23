@@ -11,17 +11,17 @@ jobs:
 
     steps:
 
-    # 1️⃣ Download your repo code
+    #  Download your repo code
     - name: Checkout repository
       uses: actions/checkout@v4
 
 
-    # 2️⃣ Build Docker image
+    #  Build Docker image
     - name: Build Docker image
       run: docker build -t text2sql .
 
 
-    # 3️⃣ Run container using GitHub secrets
+    #  Run container using GitHub secrets
     - name: Run container test
       run: |
         docker run -d -p 8501:8501 \
@@ -30,11 +30,11 @@ jobs:
           text2sql
 
 
-    # 4️⃣ Wait for app to start
+    #  Wait for app to start
     - name: Wait for startup
       run: sleep 20
 
 
-    # 5️⃣ Check if Streamlit is reachable
+    #  Check if Streamlit is reachable
     - name: Test app health
       run: curl http://localhost:8501 || exit 1

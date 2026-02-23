@@ -22,7 +22,7 @@ import time
 
 def answer_question(question: str):
 
-    # ✅ Start ROOT TRACE (not span)
+    # Start ROOT TRACE (not span)
     trace = langfuse.start_trace(
         name="text-to-sql-request",
         input={"question": question}
@@ -81,7 +81,7 @@ def answer_question(question: str):
 
     sql, usage = generate_sql(question)
 
-    # ✅ Child span created from TRACE
+    #  Child span created from TRACE
     exec_span = trace.start_span(name="sql-execution")
 
     try:

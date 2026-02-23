@@ -128,7 +128,7 @@ if item:
 
     st.dataframe(
         item["df"],
-        width="stretch"   # ✅ Updated from deprecated parameter
+        width="stretch"  
     )
 
     if item["usage"]:

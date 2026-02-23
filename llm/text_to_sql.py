@@ -129,13 +129,13 @@ def generate_sql(question: str):
 
     schema = get_schema_cached()
 
-    # ✅ Start ROOT TRACE (not span)
+    # Start ROOT TRACE (not span)
     trace = langfuse.start_trace(
         name="text-to-sql",
         input={"question": question}
     )
 
-    # ✅ Generation created from TRACE
+    # Generation created from TRACE
     generation = trace.start_generation(
         name="sql-generation",
         model="gpt-4.1-mini",
@@ -168,7 +168,7 @@ def generate_sql(question: str):
                 "cost_usd": cb.total_cost
             }
 
-        # ✅ Log success
+        #  Log success
         generation.update(
             output={"sql": sql},
             metadata=usage

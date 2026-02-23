@@ -14,7 +14,7 @@ if not NEON_DB_URL:
 
 engine = create_engine(
     NEON_DB_URL,
-    pool_pre_ping=True,    # handles stale connections
+    pool_pre_ping=True,   
     pool_size=5,
     max_overflow=10
 )
