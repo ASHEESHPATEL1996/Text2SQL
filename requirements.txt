@@ -72,3 +72,4 @@ zstandard==0.25.0
 sqlalchemy==1.4.54
 psycopg2-binary==2.9.11
 langchain_community
+sqlalchemy
