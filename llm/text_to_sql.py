@@ -8,9 +8,10 @@ import streamlit as st
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
+from langfuse import Langfuse
+
 from db.schema_introspect import get_schema_text
 from langchain_community.callbacks.manager import get_openai_callback
-from observability.langfuse_client import langfuse
 
 
 
@@ -19,11 +20,8 @@ load_dotenv()
 
 def get_secret(key: str):
     """Works locally (.env) and on Streamlit Cloud."""
-    try:
-        if key in st.secrets:
-            return st.secrets[key]
-    except Exception:
-        pass
+    if key in st.secrets:
+        return st.secrets[key]
     return os.getenv(key)
 
 
@@ -33,6 +31,13 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY not found")
 
 print("OpenAI API Key loaded successfully")
+
+
+langfuse = Langfuse(
+    public_key=get_secret("LANGFUSE_PUBLIC_KEY"),
+    secret_key=get_secret("LANGFUSE_SECRET_KEY"),
+    host=get_secret("LANGFUSE_HOST")
+)
 
 
 llm = ChatOpenAI(
@@ -129,13 +134,22 @@ def generate_sql(question: str):
 
     schema = get_schema_cached()
 
+<<<<<<< HEAD
     # Start ROOT TRACE (not span)
     trace = langfuse.start_trace(
+=======
+    # Start root span for this request (Langfuse v3 API)
+    trace = langfuse.start_span(
+>>>>>>> parent of 7dfe143 (langfuse error resolved)
         name="text-to-sql",
         input={"question": question}
     )
 
+<<<<<<< HEAD
     # Generation created from TRACE
+=======
+    # Generation span (tracks tokens & latency)
+>>>>>>> parent of 7dfe143 (langfuse error resolved)
     generation = trace.start_generation(
         name="sql-generation",
         model="gpt-4.1-mini",
@@ -161,6 +175,7 @@ def generate_sql(question: str):
             if not validate_sql(sql):
                 raise ValueError(f"Unsafe SQL generated:\n{raw_output}")
 
+            # Token usage metrics
             usage = {
                 "prompt_tokens": cb.prompt_tokens,
                 "completion_tokens": cb.completion_tokens,
@@ -168,7 +183,11 @@ def generate_sql(question: str):
                 "cost_usd": cb.total_cost
             }
 
+<<<<<<< HEAD
         #  Log success
+=======
+        # Log to Langfuse
+>>>>>>> parent of 7dfe143 (langfuse error resolved)
         generation.update(
             output={"sql": sql},
             metadata=usage
@@ -184,13 +203,13 @@ def generate_sql(question: str):
 
     except Exception as e:
 
+        # Log error to Langfuse
         generation.update(
             output={"error": str(e)},
             level="ERROR",
             status_message=str(e)
         )
         generation.end()
-
         trace.update(
             output={"error": str(e)},
             level="ERROR",
@@ -201,16 +220,16 @@ def generate_sql(question: str):
 
     finally:
         trace.end()
+        # Ensure logs are sent immediately
         langfuse.flush()
+
 
 if __name__ == "__main__":
 
     q = "Show all customers who are from alabama"
     print("Question:\n", q)
 
-    sql, usage = generate_sql(q)
+    sql = generate_sql(q)
 
     print("\nClean SQL Output:\n")
     print(sql)
-    print("\nUsage:\n")
-    print(usage)

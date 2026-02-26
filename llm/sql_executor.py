@@ -1,8 +1,3 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
 from db.db_connection import fetch_df
 from llm.text_to_sql import generate_sql
 
@@ -22,16 +17,19 @@ import time
 
 def answer_question(question: str):
 
+<<<<<<< HEAD
     # Start ROOT TRACE (not span)
     trace = langfuse.start_trace(
+=======
+    # Start end-to-end root span (Langfuse v3 API)
+    trace = langfuse.start_span(
+>>>>>>> parent of 7dfe143 (langfuse error resolved)
         name="text-to-sql-request",
         input={"question": question}
     )
 
     start_time = time.time()
 
-    # L1 CACHE
- 
     l1 = get_l1(question)
 
     if l1:
@@ -50,14 +48,13 @@ def answer_question(question: str):
         langfuse.flush()
         return sql, df, "L1-cache", None
 
-
-    # L2 CACHE
     l2 = get_cached_result(question)
 
     if l2:
         record_l2_hit()
         sql, df = l2
 
+        # Promote to L1
         set_l1(question, sql, df)
 
         trace.update(
@@ -74,15 +71,19 @@ def answer_question(question: str):
         return sql, df, "L2-cache", None
 
 
-    # LLM PATH
     record_miss()
 
     trace.update(metadata={"cache_source": "LLM"})
 
+    # SQL generation already tracked in text_to_sql.py
     sql, usage = generate_sql(question)
 
+<<<<<<< HEAD
     #  Child span created from TRACE
     exec_span = trace.start_span(name="sql-execution")
+=======
+    exec_span = trace.span(name="sql-execution")
+>>>>>>> parent of 7dfe143 (langfuse error resolved)
 
     try:
         df = fetch_df(sql)
@@ -99,7 +100,9 @@ def answer_question(question: str):
 
     except Exception as e:
 
-        exec_span.update(output={"error": str(e)})
+        exec_span.update(
+            output={"error": str(e)}
+        )
         exec_span.end()
 
         trace.update(level="ERROR")
@@ -108,9 +111,8 @@ def answer_question(question: str):
 
         raise RuntimeError(f"SQL execution failed: {e}")
 
-    # SAVE CACHE
-    save_to_cache(question, sql, df)
-    set_l1(question, sql, df)
+    save_to_cache(question, sql, df)  # L2 persistent
+    set_l1(question, sql, df)         # L1 memory
 
     trace.update(
         metadata={
@@ -126,7 +128,6 @@ def answer_question(question: str):
 
     return sql, df, "LLM", usage
 
-
 if __name__ == "__main__":
 
     questions = [
@@ -137,11 +138,11 @@ if __name__ == "__main__":
     ]
 
     for q in questions:
-        sql, result, source, _ = answer_question(q)
+        sql, result, source = answer_question(q)
 
         print("\nSource:", source)
         print("Rows:", len(result))
 
-    print("\nCache Metrics:")
+    print("\n📊 Cache Metrics:")
     print(get_metrics())
     print("Hit Rate:", round(hit_rate() * 100, 2), "%")

@@ -86,5 +86,8 @@ langchain-openai
 openai
 langfuse>=3,<4
 langchain-community
+<<<<<<< HEAD
 pydantic>=2.7.4
 >>>>>>> parent of ad31743 (updated readme and requirments files)
+=======
+>>>>>>> parent of 7dfe143 (langfuse error resolved)
