@@ -44,7 +44,7 @@ else:
 
 
 st.sidebar.divider()
-st.sidebar.header("💡 Example Questions")
+st.sidebar.header(" Example Questions")
 
 examples = [
     "Show all customers who are from Alabama",
@@ -150,7 +150,7 @@ if item:
     csv = item["df"].to_csv(index=False).encode("utf-8")
 
     st.download_button(
-        label="⬇️ Download results as CSV",
+        label="Download results as CSV",
         data=csv,
         file_name="query_results.csv",
         mime="text/csv"
@@ -159,7 +159,7 @@ if item:
 
 
 st.divider()
-st.subheader("📊 Cache Metrics")
+st.subheader(" Cache Metrics")
 
 metrics = get_metrics()
 

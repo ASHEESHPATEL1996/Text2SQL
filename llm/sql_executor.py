@@ -134,6 +134,6 @@ if __name__ == "__main__":
         print("\nSource:", source)
         print("Rows:", len(result))
 
-    print("\n📊 Cache Metrics:")
+    print("\n Cache Metrics:")
     print(get_metrics())
     print("Hit Rate:", round(hit_rate() * 100, 2), "%")
