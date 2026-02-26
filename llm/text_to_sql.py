@@ -8,20 +8,36 @@ import streamlit as st
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-from langfuse import Langfuse
-
 from db.schema_introspect import get_schema_text
-from langchain_community.callbacks.manager import get_openai_callback
+
+try:
+    from langchain_community.callbacks.manager import get_openai_callback
+except ImportError:
+    # Fallback if langchain_community is not available
+    from contextlib import contextmanager
+    @contextmanager
+    def get_openai_callback():
+        class CB:
+            prompt_tokens = 0
+            completion_tokens = 0
+            total_tokens = 0
+            total_cost = 0.0
+        yield CB()
 
 
 
 load_dotenv()
 
+# Import langfuse from observability module (which handles fallback)
+from observability.langfuse_client import langfuse
 
 def get_secret(key: str):
     """Works locally (.env) and on Streamlit Cloud."""
-    if key in st.secrets:
-        return st.secrets[key]
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
     return os.getenv(key)
 
 
@@ -33,15 +49,8 @@ if not OPENAI_API_KEY:
 print("OpenAI API Key loaded successfully")
 
 
-langfuse = Langfuse(
-    public_key=get_secret("LANGFUSE_PUBLIC_KEY"),
-    secret_key=get_secret("LANGFUSE_SECRET_KEY"),
-    host=get_secret("LANGFUSE_HOST")
-)
-
-
 llm = ChatOpenAI(
-    model="gpt-4.1-mini",
+    model="gpt-4o-mini",
     temperature=0
 )
 
@@ -134,25 +143,16 @@ def generate_sql(question: str):
 
     schema = get_schema_cached()
 
-<<<<<<< HEAD
     # Start ROOT TRACE (not span)
     trace = langfuse.start_trace(
-=======
-    # Start root span for this request (Langfuse v3 API)
-    trace = langfuse.start_span(
->>>>>>> parent of 7dfe143 (langfuse error resolved)
         name="text-to-sql",
         input={"question": question}
     )
 
-<<<<<<< HEAD
     # Generation created from TRACE
-=======
-    # Generation span (tracks tokens & latency)
->>>>>>> parent of 7dfe143 (langfuse error resolved)
     generation = trace.start_generation(
         name="sql-generation",
-        model="gpt-4.1-mini",
+        model="gpt-4o-mini",
         input={
             "question": question,
             "schema_preview": schema[:2000]
@@ -183,11 +183,7 @@ def generate_sql(question: str):
                 "cost_usd": cb.total_cost
             }
 
-<<<<<<< HEAD
-        #  Log success
-=======
-        # Log to Langfuse
->>>>>>> parent of 7dfe143 (langfuse error resolved)
+        # Log success
         generation.update(
             output={"sql": sql},
             metadata=usage

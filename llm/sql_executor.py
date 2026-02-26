@@ -17,13 +17,8 @@ import time
 
 def answer_question(question: str):
 
-<<<<<<< HEAD
     # Start ROOT TRACE (not span)
     trace = langfuse.start_trace(
-=======
-    # Start end-to-end root span (Langfuse v3 API)
-    trace = langfuse.start_span(
->>>>>>> parent of 7dfe143 (langfuse error resolved)
         name="text-to-sql-request",
         input={"question": question}
     )
@@ -78,12 +73,8 @@ def answer_question(question: str):
     # SQL generation already tracked in text_to_sql.py
     sql, usage = generate_sql(question)
 
-<<<<<<< HEAD
-    #  Child span created from TRACE
+    # Child span created from TRACE
     exec_span = trace.start_span(name="sql-execution")
-=======
-    exec_span = trace.span(name="sql-execution")
->>>>>>> parent of 7dfe143 (langfuse error resolved)
 
     try:
         df = fetch_df(sql)
@@ -109,7 +100,7 @@ def answer_question(question: str):
         trace.end()
         langfuse.flush()
 
-        raise RuntimeError(f"SQL execution failed: {e}")
+        raise RuntimeError(f"SQL execution failed: {e}") from e
 
     save_to_cache(question, sql, df)  # L2 persistent
     set_l1(question, sql, df)         # L1 memory
@@ -138,7 +129,7 @@ if __name__ == "__main__":
     ]
 
     for q in questions:
-        sql, result, source = answer_question(q)
+        sql, result, source, usage = answer_question(q)
 
         print("\nSource:", source)
         print("Rows:", len(result))

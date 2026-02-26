@@ -44,7 +44,7 @@ def test_connection():
     try:
         val = fetch_scalar("SELECT 1")
         return val == 1
-    except Exception:
+    except ConnectionError:
         return False
 
 
