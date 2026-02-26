@@ -74,6 +74,7 @@ zstandard==0.25.0
 sqlalchemy==1.4.54
 psycopg2-binary==2.9.11
 langchain_community
+<<<<<<< HEAD
 sqlalchemy
 =======
 ﻿streamlit
@@ -91,3 +92,5 @@ pydantic>=2.7.4
 >>>>>>> parent of ad31743 (updated readme and requirments files)
 =======
 >>>>>>> parent of 7dfe143 (langfuse error resolved)
+=======
+>>>>>>> parent of efdb272 (fix)
