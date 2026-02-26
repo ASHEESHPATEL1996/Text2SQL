@@ -1,23 +1,22 @@
-# Text-to-SQL GenAI System
+# 🧠 Text-to-SQL GenAI System
 
 **Natural Language → SQL → Database Insights**
 
 A production-style Generative AI application that converts plain English questions into executable SQL queries and retrieves results from a PostgreSQL database (Neon). The system includes multi-tier caching, LLM observability, cost tracking, and an interactive Streamlit dashboard.
 
 **Live Demo:**
-https://text2sql-asheeshpatel1996.streamlit.app/
+https://text2sql-asheeshpatel.streamlit.app/
 
 ---
 
-## Key Features
+## ✨ Key Features
 
-* Natural language to SQL using an LLM
-* PostgreSQL (Neon) backend
-* Multi-tier caching
+* 🗣️ Natural language to SQL using an LLM
+* 🗄️ PostgreSQL (Neon) backend
+* ⚡ Multi-tier caching
 
   * Tier-1: In-memory cache
   * Tier-2: Persistent DB cache
-    
 *  Real-time token usage & cost estimation
 *  Schema-aware SQL generation
 *  LLM observability with Langfuse
@@ -28,7 +27,7 @@ https://text2sql-asheeshpatel1996.streamlit.app/
 
 ---
 
-## Architecture Overview
+##Architecture Overview
 
 ```
 User → Streamlit UI → LLM (Text-to-SQL)
@@ -48,7 +47,7 @@ Enhancements:
 
 ---
 
-## Tech Stack
+## 📦 Tech Stack
 
 * **Python 3.13.5**
 * Streamlit
@@ -62,9 +61,9 @@ Enhancements:
 
 ---
 
-## Run the App Locally (From GitHub)
+## 🚀 Run the App Locally (From GitHub)
 
-### Clone the Repository
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/<your-username>/Text2SQL.git
@@ -73,7 +72,7 @@ cd Text2SQL
 
 ---
 
-### Create a Virtual Environment
+### 2️⃣ Create a Virtual Environment
 
 ```bash
 python -m venv .venv
@@ -95,7 +94,7 @@ source .venv/bin/activate
 
 ---
 
-### Install Dependencies
+### 3️⃣ Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -103,7 +102,7 @@ pip install -r requirements.txt
 
 ---
 
-### Configure Environment Variables
+### 4️⃣ Configure Environment Variables
 
 Create a `.env` file in the project root:
 
@@ -117,7 +116,7 @@ LANGFUSE_HOST=https://cloud.langfuse.com
 
 ---
 
-### Run the Streamlit App
+### 5️⃣ Run the Streamlit App
 
 ```bash
 streamlit run app/app.py
@@ -131,7 +130,7 @@ http://localhost:8501
 
 ---
 
-## Run Using Docker
+## 🐳 Run Using Docker
 
 ### Build Image
 
@@ -155,14 +154,15 @@ http://localhost:8501
 
 ---
 
-## Access the Hosted Version
+## 🌐 Access the Hosted Version
 
 You can use the deployed app directly:
- https://text2sql-asheeshpatel.streamlit.app/
+
+👉 https://text2sql-asheeshpatel.streamlit.app/
 
 ---
 
-## How It Works
+## 📊 How It Works
 
 1. User enters a natural language query
 2. System retrieves database schema
@@ -174,7 +174,7 @@ You can use the deployed app directly:
 
 ---
 
-## Caching Strategy
+## ⚡ Caching Strategy
 
 ### Tier-1 Cache (Memory)
 
@@ -190,7 +190,7 @@ You can use the deployed app directly:
 
 ---
 
-## Observability & Monitoring
+## 🔍 Observability & Monitoring
 
 Langfuse integration provides:
 
@@ -202,7 +202,7 @@ Langfuse integration provides:
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 Text2SQL/
@@ -221,7 +221,7 @@ Text2SQL/
 
 ---
 
-## Safety Measures
+## 🛡️ Safety Measures
 
 * Only SELECT queries allowed
 * SQL validation before execution
@@ -230,7 +230,7 @@ Text2SQL/
 
 ---
 
-##  Notes
+## 📌 Notes
 
 * Requires valid OpenAI API key
 * Requires accessible PostgreSQL database
@@ -244,4 +244,4 @@ Text2SQL/
 
 ---
 
- If you find this project useful, consider giving it a star!
+⭐ If you find this project useful, consider giving it a star!
