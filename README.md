@@ -238,7 +238,7 @@ Text2SQL/
 
 ---
 
-## What Can Be Done Next
+## 🔜 What Can Be Done Next
 
 * **Semantic cache lookup** — Introduce embedding-based similarity so equivalent questions reuse the same cached SQL. For instance, “How many users signed up last month?” and “What’s the count of new signups in the previous month?” would both resolve to one cached query, avoiding duplicate LLM calls and lowering latency and cost.
 

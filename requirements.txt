@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 altair==6.0.0
 annotated-types==0.7.0
 anyio==4.12.1
@@ -74,3 +75,16 @@ sqlalchemy==1.4.54
 psycopg2-binary==2.9.11
 langchain_community
 sqlalchemy
+=======
+﻿streamlit
+pandas
+sqlalchemy
+psycopg2-binary
+python-dotenv
+langchain
+langchain-openai
+openai
+langfuse>=3,<4
+langchain-community
+pydantic>=2.7.4
+>>>>>>> parent of ad31743 (updated readme and requirments files)
