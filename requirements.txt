@@ -1,19 +1,21 @@
 # Core LLM & LangChain dependencies
-langchain==1.2.10
-langchain-core==1.2.14
-langchain-openai==1.1.10
-langchain-community==0.0.29
-langsmith==0.7.5
-openai==2.21.0
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-openai>=0.0.0
+langchain-community>=0.0.0
+langsmith>=0.1.0
+openai>=2.0.0
 
 # Database
-sqlalchemy==1.4.54
-psycopg2-binary==2.9.11
+sqlalchemy>=1.4.0
+psycopg2-binary>=2.9.0
 
 # Data & UI
-pandas==2.3.3
-streamlit==1.54.0
+pandas>=2.0.0
+streamlit>=1.28.0
 
 # Configuration & Utilities
-requests==2.32.5
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+requests>=2.0.0
 
