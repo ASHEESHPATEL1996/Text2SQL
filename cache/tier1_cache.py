@@ -24,3 +24,7 @@ def get_l1(question: str):
 def set_l1(question: str, sql: str, df, ttl=DEFAULT_TTL):
     expiry = time.time() + ttl
     _cache[question] = (sql, df, expiry)
+
+
+def clear_l1():
+    _cache.clear()

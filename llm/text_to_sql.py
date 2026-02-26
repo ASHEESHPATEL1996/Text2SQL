@@ -50,7 +50,7 @@ print("OpenAI API Key loaded successfully")
 
 
 llm = ChatOpenAI(
-    model="gpt-4o-mini",
+    model="gpt-4.1-mini",
     temperature=0
 )
 
@@ -152,7 +152,7 @@ def generate_sql(question: str):
     # Generation created from TRACE
     generation = trace.start_generation(
         name="sql-generation",
-        model="gpt-4o-mini",
+        model="gpt-4.1-mini",
         input={
             "question": question,
             "schema_preview": schema[:2000]
