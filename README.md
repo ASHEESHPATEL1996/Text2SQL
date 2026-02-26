@@ -5,7 +5,7 @@
 A production-style Generative AI application that converts plain English questions into executable SQL queries and retrieves results from a PostgreSQL database (Neon). The system includes multi-tier caching, LLM observability, cost tracking, and an interactive Streamlit dashboard.
 
 **Live Demo:**
-https://text2sql-asheeshpatel.streamlit.app/
+https://text2sql-asheeshpatel1996.streamlit.app/
 
 ---
 
