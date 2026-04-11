@@ -1,42 +1,42 @@
+import logging
 import os
-import streamlit as st
+from contextlib import contextmanager
 
-# Define mock classes first
-class MockSpan:
+from dotenv import load_dotenv
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
+class MockObservation:
     def update(self, *args, **kwargs):
         return self
+
     def end(self):
         pass
-    def start_span(self, *args, **kwargs):
-        return MockSpan()
-    def start_generation(self, *args, **kwargs):
-        return MockSpan()
 
-class MockTrace(MockSpan):
-    def start_trace(self, *args, **kwargs):
-        return MockTrace()
-    def flush(self):
-        pass
+    @contextmanager
+    def start_as_current_observation(self, *args, **kwargs):
+        yield MockObservation()
 
-class Langfuse:
+
+class MockLangfuse:
     def __init__(self, *args, **kwargs):
         pass
-    def start_trace(self, *args, **kwargs):
-        return MockTrace()
+
+    @contextmanager
+    def start_as_current_observation(self, *args, **kwargs):
+        yield MockObservation()
+
     def flush(self):
         pass
 
-# Try to import real Langfuse, fall back to mock if it fails
-try:
-    from langfuse import Langfuse as RealLangfuse
-    Langfuse = RealLangfuse
-except Exception:
-    # Use mock Langfuse if import fails (pydantic compatibility issue)
-    pass
 
 def get_secret(key: str):
-    # Works locally + Streamlit Cloud
     try:
+        import streamlit as st
+
         if key in st.secrets:
             return st.secrets[key]
     except Exception:
@@ -45,11 +45,23 @@ def get_secret(key: str):
 
 
 try:
-    langfuse = Langfuse(
-        public_key=get_secret("LANGFUSE_PUBLIC_KEY"),
-        secret_key=get_secret("LANGFUSE_SECRET_KEY"),
-        host=get_secret("LANGFUSE_HOST")
-    )
-except Exception:
-    # Fall back to mock if initialization fails
-    langfuse = Langfuse()
+    from langfuse import Langfuse as RealLangfuse
+
+    _pk = get_secret("LANGFUSE_PUBLIC_KEY")
+    _sk = get_secret("LANGFUSE_SECRET_KEY")
+    _host = get_secret("LANGFUSE_HOST") or os.getenv("LANGFUSE_BASE_URL")
+
+    if not _pk or not _sk:
+        logger.warning(
+            "Langfuse keys missing (LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY); "
+            "tracing disabled until set in .env or Streamlit secrets."
+        )
+        langfuse = MockLangfuse()
+    else:
+        init_kw = {"public_key": _pk, "secret_key": _sk}
+        if _host:
+            init_kw["host"] = _host
+        langfuse = RealLangfuse(**init_kw)
+except Exception as e:
+    logger.warning("Langfuse client unavailable (%s); using mock.", e)
+    langfuse = MockLangfuse()

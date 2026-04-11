@@ -1,6 +1,8 @@
 
 _metrics = {
     "l1_hits": 0,
+    "l2_exact_hits": 0,
+    "l2_semantic_hits": 0,
     "l2_hits": 0,
     "misses": 0
 }
@@ -10,7 +12,11 @@ def record_l1_hit():
     _metrics["l1_hits"] += 1
 
 
-def record_l2_hit():
+def record_l2_hit(kind: str = "exact"):
+    if kind == "semantic":
+        _metrics["l2_semantic_hits"] += 1
+    else:
+        _metrics["l2_exact_hits"] += 1
     _metrics["l2_hits"] += 1
 
 

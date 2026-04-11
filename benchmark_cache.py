@@ -104,6 +104,11 @@ def main():
         help="Natural-language query to benchmark.",
     )
     parser.add_argument(
+        "--paraphrase",
+        default="List customers located in Alabama",
+        help="Paraphrase used to test semantic cache hit.",
+    )
+    parser.add_argument(
         "--runs",
         type=int,
         default=10,
@@ -124,6 +129,18 @@ def main():
     l2_runs = [run_query(args.question, force_l2=True) for _ in range(args.force_l2_runs)]
 
     summarize(main_runs, l2_runs)
+
+    print("\n=== Semantic Paraphrase Check ===")
+    reset_metrics()
+    clear_l1()
+    cold = run_query(args.question)
+    clear_l1()
+    paraphrase = run_query(args.paraphrase, force_l2=True)
+    print(f"Seed run source: {cold['source']} latency={cold['elapsed_ms']:.2f} ms")
+    print(
+        f"Paraphrase source: {paraphrase['source']} "
+        f"latency={paraphrase['elapsed_ms']:.2f} ms"
+    )
 
 
 if __name__ == "__main__":

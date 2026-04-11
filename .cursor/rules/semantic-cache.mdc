@@ -1,0 +1,49 @@
+---
+description: Semantic cache guardrails for Text2SQL
+globs:
+  - cache/**
+  - llm/sql_executor.py
+  - app/app.py
+  - benchmark_cache.py
+alwaysApply: false
+---
+
+# Semantic Cache Architecture
+
+- Keep two tiers: L1 exact in-memory and L2 persistent in Postgres.
+- L2 lookup order: exact hash match first, semantic vector search second.
+- Semantic hit is valid only when similarity is above `SEMANTIC_SIMILARITY_THRESHOLD`.
+
+# Required Consistency
+
+- `cache/tier2_cache.py` handles schema setup, exact lookup, semantic lookup, and writes.
+- `llm/sql_executor.py` must preserve L1 -> L2 -> LLM flow.
+- `cache/cache_metrics.py` counters must remain aligned with source labels.
+- `app/app.py` labels should map to exact and semantic cache sources.
+
+# Database Requirements
+
+- Neon database must enable pgvector: `CREATE EXTENSION IF NOT EXISTS vector`.
+- `query_cache` must include `embedding vector(1536)` and `embedding_model`.
+- Keep HNSW index on embedding using cosine ops.
+- Store vectors from `text-embedding-3-small` unless model config changes.
+
+# Environment Variables
+
+- `OPENAI_API_KEY` for embeddings.
+- `EMBEDDING_MODEL` defaults to `text-embedding-3-small`.
+- `SEMANTIC_CACHE_ENABLED` toggles semantic path.
+- `SEMANTIC_SIMILARITY_THRESHOLD` controls acceptance precision/recall.
+
+# Testing Checklist
+
+- Cold run returns `LLM`.
+- Immediate repeat returns `L1-cache`.
+- After clearing L1, same question returns `L2-cache`.
+- Paraphrase run after seed question returns `L2-semantic-cache` when threshold is met.
+- High threshold should force miss on weakly related paraphrases.
+
+# Non-goals
+
+- Do not alter SQL safety policy in `llm/text_to_sql.py`.
+- Do not change Streamlit UX outside cache source and metrics visibility.

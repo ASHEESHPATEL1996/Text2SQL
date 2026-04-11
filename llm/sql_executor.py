@@ -17,107 +17,105 @@ import time
 
 def answer_question(question: str):
 
-    # Start ROOT TRACE (not span)
-    trace = langfuse.start_trace(
+    with langfuse.start_as_current_observation(
         name="text-to-sql-request",
-        input={"question": question}
-    )
+        as_type="span",
+        input={"question": question},
+    ) as trace:
 
-    start_time = time.time()
+        start_time = time.time()
 
-    l1 = get_l1(question)
+        l1 = get_l1(question)
 
-    if l1:
-        record_l1_hit()
-        sql, df = l1
+        if l1:
+            record_l1_hit()
+            sql, df = l1
 
-        trace.update(
-            metadata={
-                "cache_source": "L1",
-                "rows_returned": len(df)
-            },
-            output={"sql": sql}
-        )
+            trace.update(
+                metadata={
+                    "cache_source": "L1",
+                    "rows_returned": len(df)
+                },
+                output={"sql": sql}
+            )
 
-        trace.end()
-        langfuse.flush()
-        return sql, df, "L1-cache", None
+            langfuse.flush()
+            return sql, df, "L1-cache", None
 
-    l2 = get_cached_result(question)
+        l2 = get_cached_result(question)
 
-    if l2:
-        record_l2_hit()
-        sql, df = l2
+        if l2:
+            sql, df, cache_meta = l2
+            hit_type = cache_meta.get("type", "exact")
+            similarity = cache_meta.get("similarity")
+            record_l2_hit("semantic" if hit_type == "semantic" else "exact")
 
-        # Promote to L1
+            set_l1(question, sql, df)
+
+            trace.update(
+                metadata={
+                    "cache_source": f"L2-{hit_type}",
+                    "promoted_to_L1": True,
+                    "rows_returned": len(df),
+                    "similarity": similarity
+                },
+                output={"sql": sql}
+            )
+
+            langfuse.flush()
+            if hit_type == "semantic":
+                return sql, df, "L2-semantic-cache", None
+            return sql, df, "L2-cache", None
+
+        record_miss()
+
+        trace.update(metadata={"cache_source": "LLM"})
+
+        sql, usage = generate_sql(question)
+
+        with trace.start_as_current_observation(
+            name="sql-execution",
+            as_type="span",
+        ) as exec_span:
+
+            try:
+                df = fetch_df(sql)
+
+                execution_time = time.time() - start_time
+
+                exec_span.update(
+                    output={
+                        "rows_returned": len(df),
+                        "execution_time_sec": execution_time
+                    }
+                )
+
+            except Exception as e:
+
+                exec_span.update(
+                    output={"error": str(e)}
+                )
+
+                trace.update(level="ERROR")
+                langfuse.flush()
+
+                raise RuntimeError(f"SQL execution failed: {e}") from e
+
+        save_to_cache(question, sql, df)
         set_l1(question, sql, df)
 
         trace.update(
             metadata={
-                "cache_source": "L2",
-                "promoted_to_L1": True,
-                "rows_returned": len(df)
+                "rows_returned": len(df),
+                "execution_time_sec": execution_time,
+                "saved_to_cache": True
             },
             output={"sql": sql}
         )
 
-        trace.end()
-        langfuse.flush()
-        return sql, df, "L2-cache", None
-
-
-    record_miss()
-
-    trace.update(metadata={"cache_source": "LLM"})
-
-    # SQL generation already tracked in text_to_sql.py
-    sql, usage = generate_sql(question)
-
-    # Child span created from TRACE
-    exec_span = trace.start_span(name="sql-execution")
-
-    try:
-        df = fetch_df(sql)
-
-        execution_time = time.time() - start_time
-
-        exec_span.update(
-            output={
-                "rows_returned": len(df),
-                "execution_time_sec": execution_time
-            }
-        )
-        exec_span.end()
-
-    except Exception as e:
-
-        exec_span.update(
-            output={"error": str(e)}
-        )
-        exec_span.end()
-
-        trace.update(level="ERROR")
-        trace.end()
         langfuse.flush()
 
-        raise RuntimeError(f"SQL execution failed: {e}") from e
-
-    save_to_cache(question, sql, df)  # L2 persistent
-    set_l1(question, sql, df)         # L1 memory
-
-    trace.update(
-        metadata={
-            "rows_returned": len(df),
-            "execution_time_sec": execution_time,
-            "saved_to_cache": True
-        },
-        output={"sql": sql}
-    )
-
-    trace.end()
-    langfuse.flush()
-
-    return sql, df, "LLM", usage
+        return sql, df, "LLM", usage
 
 if __name__ == "__main__":
 

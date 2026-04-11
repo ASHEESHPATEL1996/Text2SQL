@@ -143,81 +143,62 @@ def generate_sql(question: str):
 
     schema = get_schema_cached()
 
-    # Start ROOT TRACE (not span)
-    trace = langfuse.start_trace(
-        name="text-to-sql",
-        input={"question": question}
-    )
-
-    # Generation created from TRACE
-    generation = trace.start_generation(
+    with langfuse.start_as_current_observation(
         name="sql-generation",
+        as_type="generation",
         model="gpt-4.1-mini",
         input={
             "question": question,
-            "schema_preview": schema[:2000]
-        }
-    )
+            "schema_preview": schema[:2000],
+        },
+    ) as generation:
 
-    try:
+        try:
 
-        # Capture token usage
-        with get_openai_callback() as cb:
+            with get_openai_callback() as cb:
 
-            response = chain.invoke({
-                "schema": schema,
-                "question": question
-            })
+                response = chain.invoke({
+                    "schema": schema,
+                    "question": question
+                })
 
-            raw_output = response.content
-            sql = clean_sql(raw_output)
+                raw_output = response.content
+                sql = clean_sql(raw_output)
 
-            if not validate_sql(sql):
-                raise ValueError(f"Unsafe SQL generated:\n{raw_output}")
+                if not validate_sql(sql):
+                    raise ValueError(f"Unsafe SQL generated:\n{raw_output}")
 
-            # Token usage metrics
-            usage = {
-                "prompt_tokens": cb.prompt_tokens,
-                "completion_tokens": cb.completion_tokens,
-                "total_tokens": cb.total_tokens,
-                "cost_usd": cb.total_cost
-            }
+                usage = {
+                    "prompt_tokens": cb.prompt_tokens,
+                    "completion_tokens": cb.completion_tokens,
+                    "total_tokens": cb.total_tokens,
+                    "cost_usd": cb.total_cost,
+                }
 
-        # Log success
-        generation.update(
-            output={"sql": sql},
-            metadata=usage
-        )
-        generation.end()
+            generation.update(
+                output={"sql": sql},
+                usage_details={
+                    "prompt_tokens": usage["prompt_tokens"],
+                    "completion_tokens": usage["completion_tokens"],
+                    "total_tokens": usage["total_tokens"],
+                },
+                metadata={"cost_usd": usage["cost_usd"]},
+            )
 
-        trace.update(
-            output={"sql": sql},
-            metadata={"success": True}
-        )
+            return sql, usage
 
-        return sql, usage
+        except Exception as e:
 
-    except Exception as e:
+            generation.update(
+                output={"error": str(e)},
+                level="ERROR",
+                status_message=str(e),
+            )
 
-        # Log error to Langfuse
-        generation.update(
-            output={"error": str(e)},
-            level="ERROR",
-            status_message=str(e)
-        )
-        generation.end()
-        trace.update(
-            output={"error": str(e)},
-            level="ERROR",
-            status_message=str(e)
-        )
+            raise
 
-        raise
-
-    finally:
-        trace.end()
-        # Ensure logs are sent immediately
-        langfuse.flush()
+        finally:
+            langfuse.flush()
 
 
 if __name__ == "__main__":
