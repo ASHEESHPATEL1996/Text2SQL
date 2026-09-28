@@ -1,0 +1,30 @@
+# Secrets — never bake these into an image layer
+.env
+.env.*
+!.env.example
+
+# Local/dev environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# VCS and editor metadata
+.git/
+.gitignore
+.cursor/
+.claude/
+.vscode/
+
+# Evaluation tooling — not needed to run the app
+eval/
+requirements-eval.txt
+
+# Data dump used only for the one-time Neon load (db/csv_to_neon.py runs locally, not in the container)
+data_dump/
+
+# Misc
+*.md
+Dockerfile
+dockerfile
+.dockerignore

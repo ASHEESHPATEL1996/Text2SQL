@@ -1,8 +1,13 @@
+# Runtime dependencies for the Text2SQL app (used by the Dockerfile / Streamlit deploy).
+# For evaluation-only tooling (ragas, jupyter), see requirements-eval.txt — keeping
+# those out of here keeps the production image lean and avoids their extra
+# dependency-resolution constraints (see requirements-eval.txt for details).
+
 # Core LLM & LangChain dependencies
-langchain>=0.1.0
-langchain-core>=0.1.0
-langchain-openai>=0.0.0
-langchain-community>=0.0.0
+langchain>=0.1.0,<1.0.0
+langchain-core>=0.1.0,<1.0.0
+langchain-community>=0.3.0,<0.4.0
+langchain-openai>=0.3.0,<1.0.0
 langsmith>=0.1.0
 openai>=2.0.0
 
@@ -21,3 +26,9 @@ requests>=2.0.0
 
 # Observability (Langfuse Cloud / self-hosted)
 langfuse>=3.0.0
+
+
+# other 
+ragas>=0.4.0
+jupyter>=1.0.0
+ipykernel>=6.0.0
